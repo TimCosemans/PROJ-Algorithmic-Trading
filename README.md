@@ -1,7 +1,12 @@
 PROJ-Algorithmic-Trading
 ==============================
 
-Project for the course MLOps Zoomcamp
+Project for the course MLOps Zoomcamp. 
+
+As a trader, you might want to know when to sell and buy stocks
+
+Based on the closing price each day, you will decide whether to buy or sell the stock the next day. 
+Because the price can be assumed to be non-stationary, we will work with the relative change in price instead of the price itself.
 
 Project Organization
 ------------
