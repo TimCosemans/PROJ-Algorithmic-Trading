@@ -8,6 +8,20 @@ As a trader, you might want to know when to sell and buy stocks
 Based on the closing price each day, you will decide whether to buy or sell the stock the next day. 
 Because the price can be assumed to be non-stationary, we will work with the relative change in price instead of the price itself.
 
+
+Before you run, create a .env file with 
+DATAPATH: the path to the data folder
+MLFLOW_TRACKING_URI: your mlflow tracking uri (e.g., a local folder)
+
+To see your mlflow ui, run mlflow server in the source folder. Experiments always include the date of day on which they were run. 
+
+
+The src-folder contains all of the functions needed to get the data, train and evaluate the model and register the best model. 
+The run.py script is the prefect orchestration script that runs the functions in the correct order.
+
+To run locally, type python run.py local in the terminal. Then start the ui with prefect server start
+
+
 Project Organization
 ------------
 

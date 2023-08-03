@@ -36,11 +36,10 @@ def train_model_task(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.Da
     return experiment_name
 
 @task
-def register_best_model_task(env_path: str = ".env") -> None:
+def register_best_model_task(experiment_name: str, env_path: str = ".env") -> None:
     """ Register best model and preprocessor in MLFlow.
     """
     tracking_uri = get_tracking_uri(env_path=env_path)
-    experiment_name = f"stock-prediction-BEL-20-{date.today()}"
 
     model_name = f"best-model-{date.today()}"
     preprocessor_name = f"preprocessor-{date.today()}"
@@ -63,7 +62,7 @@ def main_flow() -> None:
 
     print(f"Model trained and logged in {experiment_name}")
 
-    register_best_model_task()
+    register_best_model_task(experiment_name=experiment_name)
 
     print(f"Best model and preprocessor registered in {experiment_name}")
 
