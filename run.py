@@ -1,5 +1,6 @@
 from src.data.get_data import load_datapath, get_BEL20_composition, get_data
 from src.train_model.train_model import get_tracking_uri, train_test_split, train_model, register_best_model
+from src.predict.advice import modify_data, make_predictions
 
 from datetime import date
 import pandas as pd
@@ -45,6 +46,20 @@ def register_best_model_task(experiment_name: str, env_path: str = ".env") -> No
     preprocessor_name = f"preprocessor-{date.today()}"
     register_best_model(tracking_uri=tracking_uri, experiment_name=experiment_name, model_name=model_name, preprocessor_name=preprocessor_name)
     
+    return model_name, preprocessor_name
+
+@task
+def make_predictions_task(data_name: str, model_name: str, preprocessor_name: str, experiment_name: str, env_path: str = ".env") -> None:
+    """ Make predictions with the best model for the next day.
+    """
+    
+    data = modify_data(data_name=data_name)
+
+    data_path = load_datapath(env_path=env_path)
+    tracking_uri = get_tracking_uri(env_path=env_path)
+
+    make_predictions(data=data, preprocessor_name=preprocessor_name, model_name=model_name, data_path=data_path, tracking_uri=tracking_uri, experiment_name=experiment_name, stage="Production")
+
     return None
 
 
@@ -62,9 +77,15 @@ def main_flow() -> None:
 
     print(f"Model trained and logged in {experiment_name}")
 
-    register_best_model_task(experiment_name=experiment_name)
+    model_name, preprocessor_name = register_best_model_task(experiment_name=experiment_name)
 
     print(f"Best model and preprocessor registered in {experiment_name}")
+
+    make_predictions_task(data_name=data_name, model_name=model_name, preprocessor_name=preprocessor_name, experiment_name=experiment_name)
+
+    print("Predictions made and saved in data folder")
+
+
 
 
 if __name__ == "__main__":

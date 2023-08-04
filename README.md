@@ -17,9 +17,15 @@ To see your mlflow ui, run mlflow server in the source folder. Experiments alway
 
 
 The src-folder contains all of the functions needed to get the data, train and evaluate the model and register the best model. 
-The run.py script is the prefect orchestration script that runs the functions in the correct order.
+The run.py script is the prefect orchestration script that runs the functions in the correct order. It fetches the data on a daily basis, trains the model and registers the best model. Then ths model returns buy or sell signals for the next day. These signals are distributed through a flask api.
 
 To run locally, type python run.py local in the terminal. Then start the ui with prefect server start
+
+Next steps: 
+do batch deployment --> add to prefect flow
+containerize process
+deploy to cloud
+
 
 
 Project Organization
