@@ -1,6 +1,7 @@
 from src.data.get_data import load_datapath, get_BEL20_composition, get_data
 from src.train_model.train_model import get_tracking_uri, train_test_split, train_model, register_best_model
 from src.predict.advice import modify_data, make_predictions
+from src.monitoring.evidently_monitoring import get_workspace_name, get_reference_data, prepare_data, open_workspace_project, add_report
 
 from datetime import date
 import pandas as pd
@@ -62,7 +63,22 @@ def make_predictions_task(data_name: str, model_name: str, preprocessor_name: st
 
     return None
 
+@task
+def model_monitoring(data_name: str, model_name: str, preprocessor_name: str, experiment_name: str, env_path: str = ".env") -> None:
+    """ Monitor model performance with Evidently.
+    """
+    
+    workspace_name = get_workspace_name() # Get workspace name from .env file
+    project_id, workspace = open_workspace_project(workspace_name=workspace_name) # Open workspace and project in Evidently
 
+    data_path = load_datapath(env_path=env_path)
+    tracking_uri = get_tracking_uri(env_path=env_path)
+
+    ref_data_name = get_reference_data(data_path=data_path) # Get reference data
+    ref_data, data = prepare_data(data_name=data_name, ref_data_name=ref_data_name, tracking_uri=tracking_uri, experiment_name=experiment_name, model_name=model_name, preprocessor_name=preprocessor_name, stage="Production") # Prepare data for Evidently
+
+    add_report(project_id=project_id, workspace=workspace, ref_data=ref_data, data=data) # Add report to project
+ 
 @flow
 def main_flow() -> None: 
     """ Main flow of the project.
@@ -84,6 +100,10 @@ def main_flow() -> None:
     make_predictions_task(data_name=data_name, model_name=model_name, preprocessor_name=preprocessor_name, experiment_name=experiment_name)
 
     print("Predictions made and saved in data folder")
+
+    model_monitoring(data_name=data_name, model_name=model_name, preprocessor_name=preprocessor_name, experiment_name=experiment_name)
+
+    print("Model performance monitored with Evidently")
 
 
 

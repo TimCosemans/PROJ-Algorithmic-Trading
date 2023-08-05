@@ -19,4 +19,4 @@ def give_advice() -> Response:
     return jsonify(data) # Flask route should always return a Flask repsonse object
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=9696) # Run the app on port 9696
+    app.run()

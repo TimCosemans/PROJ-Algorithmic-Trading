@@ -33,8 +33,7 @@ def get_tracking_uri(env_path: str = ".env") -> str:
     """
 
     # get environment variables
-    # get environment variables
-    load_dotenv(dotenv_path="../.env")
+    load_dotenv(dotenv_path=env_path)
     MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI")
 
     return MLFLOW_TRACKING_URI

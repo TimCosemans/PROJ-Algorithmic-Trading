@@ -23,13 +23,20 @@ gunicorn -c gunicorn_config.py 'app:app' in the app directory
 
 To run locally, type python run.py local in the terminal. Then start the ui with prefect server start
 
-Next steps: 
-do batch deployment --> add to prefect flow
+launch the monitorign dasboard with evidently ui --workspace ./evidently_workspace 
+
+create a prefect.yaml file by running prefect deploy in the root folder and following the wizard
+
+
 containerize process
 deploy to cloud
 
+username: timcosemans
+password: VXLccyU6wp8%48
 
+to build the docker container, run docker build -t trading_advice:latest
 
+to then run the container, run docker run -it -p 7070:9696 -d trading_advice:latest
 Project Organization
 ------------
 
