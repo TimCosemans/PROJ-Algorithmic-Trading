@@ -1,0 +1,54 @@
+services: 
+  api: 
+    image: trading_advice:latest # image name used on build
+    container_name: trading_advice # random name
+    restart: unless-stopped # always, unless stopped manually or failure 
+    ports: 
+      - 9696:9696 # port mapping host:container
+    environment:
+      - DATAPATH=/data # environment variable
+    volumes:
+      - ./data:/data # volume mapping host:container, where to go find the container maps on the host
+  
+  mlflow:
+    image: mlflow:latest
+    container_name: mlflow
+    restart: unless-stopped
+    ports:
+      - 5000:5000
+    environment:
+      - DATAPATH=/data
+      - MLFLOW_TRACKING_URI=/mlruns
+    volumes:
+      - ./data:/data
+      - ./mlruns:/mlruns
+  
+  evidently: 
+    image: evidently:latest # can also be an image from dockerhub
+    container_name: evidently
+    restart: unless-stopped
+    ports:
+      - 8000:8000
+    environment:
+      - DATAPATH=/data
+      - MLFLOW_TRACKING_URI=/mlruns
+      - EVIDENTLY_WORKSPACE=/evidently_workspace
+    volumes:
+      - ./data:/data
+      - ./mlruns:/mlruns
+      - ./evidently_workspace:/evidently_workspace
+
+    prefect: 
+      image: prefect:latest
+      container_name: prefect
+      restart: unless-stopped
+      ports:
+        - 4200:4200
+      environment:
+        - DATAPATH=/data
+        - MLFLOW_TRACKING_URI=/mlruns
+        - EVIDENTLY_WORKSPACE=/evidently_workspace
+      volumes:
+        - ./data:/data
+        - ./mlruns:/mlruns
+        - ./evidently_workspace:/evidently_workspace

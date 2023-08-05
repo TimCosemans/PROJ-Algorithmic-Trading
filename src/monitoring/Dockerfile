@@ -11,15 +11,12 @@ RUN pip install pipenv
 # Install the dependencies
 RUN pipenv install 
 
-# Copy the folders and scripts
-COPY src /src
-COPY run.py /run.py
-
 # Expose ports
-# Prefect
-EXPOSE 4200
+# Evidently
+EXPOSE 8000
 
 # Start servers 
 # Run at startup, not during building of the image
 # Use of "pipenv" and "run" instead of "pipenv shell" (create a shell initialized with all the pipenv environment variables)
-CMD ["pipenv", "run", "prefect", "server", "start"] 
+# workspace is a placeholder, the actual workspace will be mounted from the host
+CMD ["pipenv", "run", "evidently", "ui", "--workspace", "/workspace"] 

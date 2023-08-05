@@ -12,14 +12,16 @@ RUN pip install pipenv
 RUN pipenv install 
 
 # Copy the folders and scripts
-COPY src /src
-COPY run.py /run.py
+COPY src/predict/app /app
 
 # Expose ports
-# Prefect
-EXPOSE 4200
+# API
+EXPOSE 9696
+
+# Set the working directory to /app
+WORKDIR /app 
 
 # Start servers 
 # Run at startup, not during building of the image
 # Use of "pipenv" and "run" instead of "pipenv shell" (create a shell initialized with all the pipenv environment variables)
-CMD ["pipenv", "run", "prefect", "server", "start"] 
+CMD ["pipenv", "run", "gunicorn", "-c", "gunicorn_config.py"] 

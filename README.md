@@ -9,9 +9,9 @@ Based on the closing price each day, you will decide whether to buy or sell the 
 Because the price can be assumed to be non-stationary, we will work with the relative change in price instead of the price itself.
 
 
-Before you run, create a .env file with 
-DATAPATH: the path to the data folder
-MLFLOW_TRACKING_URI: your mlflow tracking uri (e.g., a local folder)
+Before you run, create a .env file with x
+DATAPATH: the path to the data folder x
+MLFLOW_TRACKING_URI: your mlflow tracking uri (e.g., a local folder) x
 
 To see your mlflow ui, run mlflow server in the source folder. Experiments always include the date of day on which they were run. 
 
@@ -27,6 +27,8 @@ launch the monitorign dasboard with evidently ui --workspace ./evidently_workspa
 
 create a prefect.yaml file by running prefect deploy in the root folder and following the wizard
 
+use lsof -i :5000 to find the process id of the flask api and kill it with kill -9 <pid>
+
 
 containerize process
 deploy to cloud
@@ -34,9 +36,22 @@ deploy to cloud
 username: timcosemans
 password: VXLccyU6wp8%48
 
-to build the docker container, run docker build -t trading_advice:latest
+to build the docker container, run 
 
-to then run the container, run docker run -it -p 7070:9696 -d trading_advice:latest
+docker build -t trading_advice:latest -f src/predict/app/Dockerfile .
+docker build -t mlflow:latest -f src/train_model/Dockerfile .
+docker build -t evidently:latest -f src/monitoring/Dockerfile .
+docker build -t prefect:latest .
+
+
+all in the root folder 
+
+then run 
+
+docker run -p 9696:9696 -d trading_advice:latest
+
+
+to then run the container, run docker run -p 7070:9696 -d trading_advice:latest
 Project Organization
 ------------
 
