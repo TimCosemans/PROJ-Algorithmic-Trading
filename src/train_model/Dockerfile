@@ -18,4 +18,5 @@ EXPOSE 5000
 # Start servers 
 # Run at startup, not during building of the image
 # Use of "pipenv" and "run" instead of "pipenv shell" (create a shell initialized with all the pipenv environment variables)
-CMD ["pipenv", "run", "mlflow", "server"] 
+# Set host to 0.0.0.0 to make it accessible from outside the container
+CMD ["pipenv", "run", "mlflow", "server", "--host", "0.0.0.0"] 

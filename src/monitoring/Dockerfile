@@ -19,4 +19,5 @@ EXPOSE 8000
 # Run at startup, not during building of the image
 # Use of "pipenv" and "run" instead of "pipenv shell" (create a shell initialized with all the pipenv environment variables)
 # workspace is a placeholder, the actual workspace will be mounted from the host
-CMD ["pipenv", "run", "evidently", "ui", "--workspace", "/workspace"] 
+# Automatically allows traffic from outside the container
+CMD ["pipenv", "run", "evidently", "ui", "--workspace", "/evidently_workspace"] 

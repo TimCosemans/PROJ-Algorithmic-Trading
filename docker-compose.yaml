@@ -15,7 +15,7 @@ services:
     container_name: mlflow
     restart: unless-stopped
     ports:
-      - 5000:5000
+      - 5050:5000
     environment:
       - DATAPATH=/data
       - MLFLOW_TRACKING_URI=/mlruns
@@ -48,7 +48,21 @@ services:
       - DATAPATH=/data
       - MLFLOW_TRACKING_URI=/mlruns
       - EVIDENTLY_WORKSPACE=/evidently_workspace
+      - PREFECT_API_URL=http://0.0.0.0:4200/api
+      - PREFECT_API_DATABASE_CONNECTION_URL=postgresql+asyncpg://username:password@db:5432/prefect # db is the name of the db container
+    depends_on:
+      - db # db container must be up before this container starts
     volumes:
       - ./data:/data
       - ./mlruns:/mlruns
       - ./evidently_workspace:/evidently_workspace
+    
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: username
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: prefect
+    ports:
+      - "5432:5432"

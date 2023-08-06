@@ -36,7 +36,7 @@ deploy to cloud
 username: timcosemans
 password: VXLccyU6wp8%48
 
-to build the docker container, run 
+to build the docker containers, run 
 
 docker build -t trading_advice:latest -f src/predict/app/Dockerfile .
 docker build -t mlflow:latest -f src/train_model/Dockerfile .
@@ -48,8 +48,14 @@ all in the root folder
 
 then run 
 
-docker run -p 9696:9696 -d trading_advice:latest
+docker compose up -d
 
+install portainer 
+
+then go to localhost:9443 and check the logs for debugging 
+
+shut down the stack using docker compose down
+if you update a container, docker compose does not register this (down and up again). if you make a new one, then it does
 
 to then run the container, run docker run -p 7070:9696 -d trading_advice:latest
 Project Organization

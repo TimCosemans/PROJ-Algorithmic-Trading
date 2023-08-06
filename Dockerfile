@@ -30,4 +30,5 @@ EXPOSE 4200
 # Start servers 
 # Run at startup, not during building of the image
 # Use of "pipenv" and "run" instead of "pipenv shell" (create a shell initialized with all the pipenv environment variables)
-CMD ["pipenv", "run", "prefect", "server", "start"] 
+# Allow traffic from outside the container
+CMD ["pipenv", "run", "prefect", "server", "start", "--host", "0.0.0.0"] 
