@@ -10,10 +10,18 @@ RUN pip install --upgrade pip
 RUN pip install pipenv 
 # Install the dependencies
 RUN pipenv install 
+# Install cron
+RUN apt-get update && apt-get -y install cron
 
 # Copy the folders and scripts
 COPY src /src
 COPY run.py /run.py
+
+# Schedule the run.py script to run every day at 6h
+COPY crontab /etc/cron.d/crontab
+# Sets permissions (644 owner can read and write, group and others can read)
+RUN chmod 0644 /etc/cron.d/crontab
+RUN crontab /etc/cron.d/crontab
 
 # Expose ports
 # Prefect
