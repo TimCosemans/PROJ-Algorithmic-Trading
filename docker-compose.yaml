@@ -1,30 +1,30 @@
-services: 
+services: #version is a legacy command you can ignore 
   api: 
-    image: trading_advice:latest # image name used on build
-    container_name: trading_advice # random name
+    image: tradingadviceregistry.azurecr.io/trading_advice:latest # image name used on build
+    container_name: trading-advice # random name
     restart: unless-stopped # always, unless stopped manually or failure 
     ports: 
       - 9696:9696 # port mapping host:container
     environment:
       - DATAPATH=/data # environment variable
     volumes:
-      - ./data:/data # volume mapping host:container, where to go find the container maps on the host
+      - data:/data # volume mapping host:container, where to go find the container maps on the host
   
   mlflow:
-    image: mlflow:latest
+    image: tradingadviceregistry.azurecr.io/mlflow:latest
     container_name: mlflow
     restart: unless-stopped
     ports:
-      - 5050:5000
+      - 5000:5000 #port mapping is not supported if you use ACI
     environment:
       - DATAPATH=/data
       - MLFLOW_TRACKING_URI=/mlruns
     volumes:
-      - ./data:/data
-      - ./mlruns:/mlruns
+      - data:/data
+      - mlruns:/mlruns
   
   evidently: 
-    image: evidently:latest # can also be an image from dockerhub
+    image: tradingadviceregistry.azurecr.io/evidently:latest # can also be an image from dockerhub
     container_name: evidently
     restart: unless-stopped
     ports:
@@ -32,14 +32,14 @@ services:
     environment:
       - DATAPATH=/data
       - MLFLOW_TRACKING_URI=/mlruns
-      - EVIDENTLY_WORKSPACE=/evidently_workspace
+      - EVIDENTLY_WORKSPACE=/evidently-workspace
     volumes:
-      - ./data:/data
-      - ./mlruns:/mlruns
-      - ./evidently_workspace:/evidently_workspace
+      - data:/data
+      - mlruns:/mlruns
+      - evidently-workspace:/evidently-workspace
 
   prefect: 
-    image: prefect:latest
+    image: tradingadviceregistry.azurecr.io/prefect:latest
     container_name: prefect
     restart: unless-stopped
     ports:
@@ -47,18 +47,18 @@ services:
     environment:
       - DATAPATH=/data
       - MLFLOW_TRACKING_URI=/mlruns
-      - EVIDENTLY_WORKSPACE=/evidently_workspace
+      - EVIDENTLY_WORKSPACE=/evidently-workspace
       - PREFECT_API_URL=http://0.0.0.0:4200/api
       - PREFECT_API_DATABASE_CONNECTION_URL=postgresql+asyncpg://username:password@db:5432/prefect # db is the name of the db container
     depends_on:
       - db # db container must be up before this container starts
     volumes:
-      - ./data:/data
-      - ./mlruns:/mlruns
-      - ./evidently_workspace:/evidently_workspace
+      - data:/data
+      - mlruns:/mlruns
+      - evidently-workspace:/evidently-workspace
     
   db:
-    image: postgres
+    image: postgres # image from dockerhub
     restart: always
     environment:
       POSTGRES_USER: username
@@ -66,3 +66,26 @@ services:
       POSTGRES_DB: prefect
     ports:
       - "5432:5432"
+    
+imageRegistryCredentials: # credentials for pulling images from azure container registry
+  tradingadviceregistry.azurecr.io:
+    auth:
+      token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkszSUk6VlhERTpTSlZHOjc3QUw6Q0VZTjpYTzZIOlRHWlA6S1hBTDpIWUROOlJKNUc6TjQ2NTo0TkdNIn0.eyJqdGkiOiJjZjk4NGI2Yi1iMzBiLTQ5ZDQtYjRiMy1lOTBmOWNiNGJhNDkiLCJzdWIiOiJjb3NlbXRpQHdlYXJlYWxnb3JoeXRobS5vbm1pY3Jvc29mdC5jb20iLCJuYmYiOjE2OTE5NDMxNDQsImV4cCI6MTY5MTk1NDg0NCwiaWF0IjoxNjkxOTQzMTQ0LCJpc3MiOiJBenVyZSBDb250YWluZXIgUmVnaXN0cnkiLCJhdWQiOiJ0cmFkaW5nYWR2aWNlcmVnaXN0cnkuYXp1cmVjci5pbyIsInZlcnNpb24iOiIxLjAiLCJyaWQiOiIyNmIxNzdkMzY3MmI0Y2ZlOTM3MmY2NWZhZTE1YTJkNSIsImdyYW50X3R5cGUiOiJyZWZyZXNoX3Rva2VuIiwiYXBwaWQiOiIwNGIwNzc5NS04ZGRiLTQ2MWEtYmJlZS0wMmY5ZTFiZjdiNDYiLCJ0ZW5hbnQiOiI3OGM1Y2E0ZC0zYmRlLTQ3ZjEtYjM5Ni1lMGZjODcxMjBmM2EiLCJwZXJtaXNzaW9ucyI6eyJBY3Rpb25zIjpbInJlYWQiLCJ3cml0ZSIsImRlbGV0ZSIsImRlbGV0ZWQvcmVhZCIsImRlbGV0ZWQvcmVzdG9yZS9hY3Rpb24iXSwiTm90QWN0aW9ucyI6bnVsbH0sInJvbGVzIjpbXX0.QzmpM1w0DhpAQSnzoZ3WZK75lUg83WbSKm_0TV_LYrlJJq3DNUbW7iZRkZCjSYZdsD0wo-fEysQfl_MJUWw9DX6CrRBoHLmm9MuDeWZyx3Xzfn7t0dnBt_jI9701eC4hpK2o2aLQKtuJUY9kfhHWC1AA5F7oz53qUn1Y7nKDEAq02yLZGd09-PPi9t-fLfmMN3HD3zPzpklI_H58qojprueFjfMBApGWlQ2JYxUMg3aTQ4ltyoo0GRPanOObaukak97e4pyM_moojcn5ja0wCDOUSeHEVUaUDB9SCFR6lug2k9tbsg_3l_TUYJ1RCnQa3QV3fJ8J8rmlKuGFghv0zg
+
+
+volumes: # define volumes on azure file share, these folders are already present there
+    data:
+      driver: azure_file
+      driver_opts:
+          share_name: trading-advice-share
+          storage_account_name: tradingadviceblob
+    mlruns:
+      driver: azure_file
+      driver_opts:
+          share_name: trading-advice-share
+          storage_account_name: tradingadviceblob
+    evidently-workspace:
+      driver: azure_file
+      driver_opts:
+          share_name: trading-advice-share
+          storage_account_name: tradingadviceblob

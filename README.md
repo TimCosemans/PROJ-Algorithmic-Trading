@@ -43,8 +43,12 @@ docker build -t mlflow:latest -f src/train_model/Dockerfile .
 docker build -t evidently:latest -f src/monitoring/Dockerfile .
 docker build -t prefect:latest .
 
-
 all in the root folder 
+
+to run an individual container, run
+
+docker run -p 5000:5000 trading_advice:latest
+
 
 then run 
 
@@ -52,12 +56,66 @@ docker compose up -d
 
 install portainer 
 
-then go to localhost:9443 and check the logs for debugging 
+then go to localhost:9443 and check the logs for debugging. you can run code directly in portainer 
 
 shut down the stack using docker compose down
 if you update a container, docker compose does not register this (down and up again). if you make a new one, then it does
 
-to then run the container, run docker run -p 7070:9696 -d trading_advice:latest
+Deploy to Cloud 
+----------------
+To deploy to cloud, you first need to create both a resource group, a service principal and a storage account in Azure. 
+
+Then create a container registry 
+
+az login
+az group create --name myResourceGroup --location eastus
+az acr create --resource-group myResourceGroup --name <acrName> --sku Basic
+az acr login --name <acrName>
+
+prefix all images in the docker compose with 'tradingadviceregistry.azurecr.io/' so the image can be pulled to run in Azure Container Registry
+
+then, change their tag to match this before you upload them
+
+docker tag trading_advice tradingadviceregistry.azurecr.io/trading_advice:latest
+docker tag mlflow tradingadviceregistry.azurecr.io/mlflow:latest
+docker tag evidently tradingadviceregistry.azurecr.io/evidently:latest
+docker tag prefect tradingadviceregistry.azurecr.io/prefect:latest
+
+see if it worked by typing
+
+docker images 
+
+
+then, push them to the registry
+
+docker push tradingadviceregistry.azurecr.io/trading_advice:latest
+docker push tradingadviceregistry.azurecr.io/mlflow:latest
+docker push tradingadviceregistry.azurecr.io/evidently:latest
+docker push tradingadviceregistry.azurecr.io/prefect:latest
+
+to list the images: 
+az acr repository list --name tradingadviceregistry --output table
+
+
+then create an azure file share and mount this as a storage account in your docker compose file
+
+az storage share create --name trading-advice-share --account-name tradingadviceblob
+
+you can copy files to this share using the azure storage explorer
+
+
+
+then, create a container instance
+
+docker login azure
+docker context create aci trading-advice-context
+docker context use trading-advice-context
+docker compose up 
+
+
+
+
+
 Project Organization
 ------------
 
