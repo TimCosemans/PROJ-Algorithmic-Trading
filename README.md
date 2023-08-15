@@ -1,11 +1,11 @@
 PROJ-Algorithmic-Trading
 ==============================
 
-Project for the course MLOps Zoomcamp. 
+Project for the course MLOps Zoomcamp.
 
 As a trader, you might want to know when to sell and buy stocks
 
-Based on the closing price each day, you will decide whether to buy or sell the stock the next day. 
+Based on the closing price each day, you will decide whether to buy or sell the stock the next day.
 Because the price can be assumed to be non-stationary, we will work with the relative change in price instead of the price itself.
 
 
@@ -13,88 +13,127 @@ Before you run, create a .env file with x
 DATAPATH: the path to the data folder x
 MLFLOW_TRACKING_URI: your mlflow tracking uri (e.g., a local folder) x
 
-To see your mlflow ui, run mlflow server in the source folder. Experiments always include the date of day on which they were run. 
+To see your mlflow ui, run mlflow server in the source folder. Experiments always include the date of day on which they were run.
 
 
-The src-folder contains all of the functions needed to get the data, train and evaluate the model and register the best model. 
-The run.py script is the prefect orchestration script that runs the functions in the correct order. It fetches the data on a daily basis, trains the model and registers the best model. Then ths model returns buy or sell signals for the next day. These signals are distributed through a flask api. To get these, run 
+The src-folder contains all of the functions needed to get the data, train and evaluate the model and register the best model.
+The run.py script is the prefect orchestration script that runs the functions in the correct order. It fetches the data on a daily basis, trains the model and registers the best model. Then ths model returns buy or sell signals for the next day. These signals are distributed through a flask api. To get these, run
 
 gunicorn -c gunicorn_config.py 'app:app' in the app directory
 
 To run locally, type python run.py local in the terminal. Then start the ui with prefect server start
 
-launch the monitorign dasboard with evidently ui --workspace ./evidently_workspace 
+launch the monitorign dasboard with evidently ui --workspace ./evidently_workspace
 
 create a prefect.yaml file by running prefect deploy in the root folder and following the wizard
 
 use lsof -i :5000 to find the process id of the flask api and kill it with kill -9 <pid>
 
 
-containerize process
-deploy to cloud
-
-username: timcosemans
-password: VXLccyU6wp8%48
-
-to build the docker containers, run 
+Docker
+------
+To build the docker containers, run
 
 docker build -t trading_advice:latest -f src/predict/app/Dockerfile .
 docker build -t mlflow:latest -f src/train_model/Dockerfile .
 docker build -t evidently:latest -f src/monitoring/Dockerfile .
 docker build -t prefect:latest .
 
-all in the root folder 
-
-to run an individual container, run
+All in the root folder.To run an individual container, run
 
 docker run -p 5000:5000 trading_advice:latest
 
-
-then run 
+Then run
 
 docker compose up -d
 
-install portainer 
+to run the whole stack. Install portainer and go to localhost:9443 to check the logs for debugging. You can run code directly in portainer. Shut down the stack using
 
-then go to localhost:9443 and check the logs for debugging. you can run code directly in portainer 
+docker compose down
 
-shut down the stack using docker compose down
-if you update a container, docker compose does not register this (down and up again). if you make a new one, then it does
+If you update a container, docker compose does not register this (down and up again). If you make a new one, then it does.
 
-Deploy to Cloud 
-----------------
-To deploy to cloud, you first need to create both a resource group, a service principal and a storage account in Azure. 
-
-Then create a container registry 
+Azure Container Registry
+------------------------
+To deploy to cloud, you first need to create both a resource group, and a virtual machine in Azure. Then create a container registry using
 
 az login
 az group create --name myResourceGroup --location eastus
 az acr create --resource-group myResourceGroup --name <acrName> --sku Basic
 az acr login --name <acrName>
 
-prefix all images in the docker compose with 'tradingadviceregistry.azurecr.io/' so the image can be pulled to run in Azure Container Registry
-
-then, change their tag to match this before you upload them
+Prefix all images in the docker compose with 'tradingadviceregistry.azurecr.io/' so the image can be pulled to run in Azure Container Registry Then, change their tag to match this before you upload them
 
 docker tag trading_advice tradingadviceregistry.azurecr.io/trading_advice:latest
 docker tag mlflow tradingadviceregistry.azurecr.io/mlflow:latest
 docker tag evidently tradingadviceregistry.azurecr.io/evidently:latest
 docker tag prefect tradingadviceregistry.azurecr.io/prefect:latest
 
-see if it worked by typing
+See if it worked by typing
 
-docker images 
+docker images
 
+Then, push them to the registry
 
-then, push them to the registry
+docker login tradingadviceregistry.azurecr.io
 
 docker push tradingadviceregistry.azurecr.io/trading_advice:latest
 docker push tradingadviceregistry.azurecr.io/mlflow:latest
 docker push tradingadviceregistry.azurecr.io/evidently:latest
 docker push tradingadviceregistry.azurecr.io/prefect:latest
 
-to list the images: 
+To list the images in the repository, type:
+
 az acr repository list --name tradingadviceregistry --output table
+
+Azure Virtual Machine
+---------------------
+To run the docker compose file in the cloud, you need to create a virtual machine. You can do this in the Azure portal.
+Expose ports by adding them in the networking section. Set destination port ranges to the ones you want to open, specify TCP protocol.
+
+Then, you need to install docker on the virtual machine.
+
+ssh into the virtual machine and run
+
+ssh timcosemans@172.187.161.17
+
+Then enter the password.
+
+Install the docker engine using this page: https://docs.docker.com/engine/install/ubuntu/
+And portainer: https://docs.portainer.io/start/install-ce/server/docker/linux. Potentiall prefix commands with sudo
+
+
+Then go to the portainer ui and create a new stack. Paste the docker compose file in the editor and click deploy.
+If it shows an error fetching the images, you need to log in to the container registry. Go to the container registry on Azure to retrieve the login server, username and password. Then add these to the portainer ui under registries. Timeouts happen, just press deploy again.
+
+Copy the data by using the terminal of your local laptop:
+
+scp -r data timcosemans@172.187.161.17:/home/timcosemans #secure copy protocol
+
+Then, ssh into the virtual machine and copy the data to the docker volume
+
+sudo docker cp data prefect:/shared
+
+Copying it into one container, will copy it into the shared volume for all containers in the stack.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 then create an azure file share and mount this as a storage account in your docker compose file
@@ -111,12 +150,12 @@ docker login azure
 docker context create aci trading-advice-context
 docker context use trading-advice-context
 
-login to the container registry 
+login to the container registry
 az acr login --name tradingadviceregistry --expose-token
 docker login tradingadviceregistry.azurecr.io --username 00000000-0000-0000-0000-000000000000 --password-stdin <<< $TOKEN
 
-docker compose up 
-docker ps 
+docker compose up
+docker ps
 
 # Update DNS name label (restarts container), leave other properties unchanged
 az container create --resource-group rg-Databricks_ML_Studio_Training --name proj-algorithmic-trading  --dns-name-label mlops
