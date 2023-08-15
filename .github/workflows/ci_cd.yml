@@ -1,0 +1,19 @@
+name: Makefile CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  code_style: 
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: quality
+      run: make quality_checks
+
+ 
