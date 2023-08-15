@@ -101,7 +101,7 @@ then create an azure file share and mount this as a storage account in your dock
 
 az storage share create --name trading-advice-share --account-name tradingadviceblob
 
-you can copy files to this share using the azure storage explorer
+you can copy files to this share using the azure storage dexplorer
 
 
 
@@ -110,11 +110,21 @@ then, create a container instance
 docker login azure
 docker context create aci trading-advice-context
 docker context use trading-advice-context
+
+login to the container registry 
+az acr login --name tradingadviceregistry --expose-token
+docker login tradingadviceregistry.azurecr.io --username 00000000-0000-0000-0000-000000000000 --password-stdin <<< $TOKEN
+
 docker compose up 
+docker ps 
+
+# Update DNS name label (restarts container), leave other properties unchanged
+az container create --resource-group rg-Databricks_ML_Studio_Training --name proj-algorithmic-trading  --dns-name-label mlops
 
 
 
 
+az container exec --resource-group rg-Databricks_ML_Studio_Training --name proj-algorithmic-trading --container-name prefect --exec-command "/bin/bash"
 
 Project Organization
 ------------
