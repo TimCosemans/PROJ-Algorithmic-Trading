@@ -5,7 +5,7 @@ quality_checks:
 	pipenv run black .
 
 test:
-	pipenc run pytest tests/
+	pipenv run pytest tests/
 
 build:
 	docker build -t tradingadviceregistry.azurecr.io/trading_advice:latest -f src/predict/app/Dockerfile .

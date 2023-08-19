@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  check-build-push-deploy:
+  check-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,6 +23,15 @@ jobs:
 
     - name: Quality
       run: make quality_checks
+
+    - name: Test
+      run: make test
+
+  build-push-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
 
     - name: Build
       run: make build

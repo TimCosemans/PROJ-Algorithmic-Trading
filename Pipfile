@@ -25,6 +25,7 @@ black = "*"
 isort = "*"
 ipykernel = "*"
 pre-commit = "*"
+pytest = "*"
 
 [requires]
 python_version = "3.10"
