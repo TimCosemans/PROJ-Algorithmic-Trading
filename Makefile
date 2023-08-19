@@ -1,10 +1,11 @@
 #contains all of the steps that will be called by the ci/cd pipeline
 
 quality_checks:
-	black .
+	pipenv run isort .
+	pipenv run black .
 
 test:
-	pytest tests/
+	pipenc run pytest tests/
 
 build:
 	docker build -t tradingadviceregistry.azurecr.io/trading_advice:latest -f src/predict/app/Dockerfile .
