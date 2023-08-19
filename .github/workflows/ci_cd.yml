@@ -23,3 +23,18 @@ jobs:
 
     - name: Quality
       run: make quality_checks
+
+    - name: Build
+      run: make build
+
+    - name: Login
+      run: make login
+      env:
+        AZ_REGISTRY_USERNAME: ${{ secrets.AZ_REGISTRY_USERNAME }}
+        AZ_REGISTRY_PASSWORD: ${{ secrets.AZ_REGISTRY_PASSWORD }}
+
+    - name: Push
+      run: make push
+
+    - name: Deploy
+      run: make deploy
