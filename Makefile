@@ -14,7 +14,7 @@ build:
 	docker build -t tradingadviceregistry.azurecr.io/prefect:latest .
 
 login:
-	docker login tradingadviceregistry.azurecr.io -u ${AZ_REGISTRY_USERNAME} --password-stdin <<< ${AZ_REGISTRY_PASSWORD}
+	docker login -u ${AZ_REGISTRY_USERNAME} -p ${AZ_REGISTRY_PASSWORD} tradingadviceregistry.azurecr.io
 
 #gets variables from .env file automatically (restart terminal after changing .env file)
 
