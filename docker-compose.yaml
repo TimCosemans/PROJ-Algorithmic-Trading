@@ -54,7 +54,7 @@ services: #version is a legacy command you can ignore
       - MLFLOW_TRACKING_URI=/shared/mlruns
       - EVIDENTLY_WORKSPACE=/shared/evidently-workspace
       - PREFECT_API_DATABASE_CONNECTION_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB} # db is the name of the db container
-      - PREFECT_API_URL=http://${PREFECT_API_URL}:4200/api
+      - PREFECT_API_URL=http://${PREFECT_API_IP}:${PREFECT_API_PORT}/api
     depends_on:
       - db # db container must be up before this container starts
     volumes:
