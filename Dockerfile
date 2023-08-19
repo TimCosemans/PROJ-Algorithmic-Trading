@@ -15,6 +15,7 @@ RUN apt-get update && apt-get -y install cron
 
 # Copy the folders and scripts
 COPY src /src
+COPY scripts /scripts
 COPY run.py /run.py
 RUN chmod 0744 /run.py
 
@@ -34,4 +35,4 @@ EXPOSE 4200
 # Run at startup, not during building of the image
 # Use of "pipenv" and "run" instead of "pipenv shell" (create a shell initialized with all the pipenv environment variables)
 # Allow traffic from outside the container
-CMD ["cron", "&&", "pipenv", "run", "prefect", "server", "start", "--host", "0.0.0.0"]
+CMD ["bash", "scripts/run_prefect.sh"]
