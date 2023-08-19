@@ -1,7 +1,6 @@
 #contains all of the steps that will be called by the ci/cd pipeline
 
 quality_checks:
-	isort .
 	black .
 
 test:
