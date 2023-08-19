@@ -29,5 +29,5 @@ dev_install:
 	pipenv run pre-commit install
 
 deploy:
-	curl -X POST "https://172.187.161.17:9443/api/stacks/webhooks/a0490689-cf5a-4ed8-b2f2-65e01afd89fb"
+	curl -X POST -k "https://172.187.161.17:9443/api/stacks/webhooks/a0490689-cf5a-4ed8-b2f2-65e01afd89fb"
 #updates stack using portainer api
