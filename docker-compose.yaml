@@ -1,8 +1,10 @@
 services: #version is a legacy command you can ignore
   api:
     image: tradingadviceregistry.azurecr.io/trading_advice:latest # image name used on build
-    container_name: trading-advice # random name
+    container_name: trading-advice # define name
     restart: unless-stopped # always, unless stopped manually or failure
+    networks:
+      - trading_advice
     ports:
       - 9696:9696 # port mapping host:container
     environment:
@@ -14,6 +16,8 @@ services: #version is a legacy command you can ignore
     image: tradingadviceregistry.azurecr.io/mlflow:latest
     container_name: mlflow
     restart: unless-stopped
+    networks:
+      - trading_advice
     ports:
       - 5000:5000 #port mapping is not supported if you use ACI
     environment:
@@ -26,6 +30,8 @@ services: #version is a legacy command you can ignore
     image: tradingadviceregistry.azurecr.io/evidently:latest # can also be an image from dockerhub
     container_name: evidently
     restart: unless-stopped
+    networks:
+      - trading_advice
     ports:
       - 8080:8000
     environment:
@@ -39,28 +45,33 @@ services: #version is a legacy command you can ignore
     image: tradingadviceregistry.azurecr.io/prefect:latest
     container_name: prefect
     restart: unless-stopped
+    networks:
+      - trading_advice
     ports:
       - 4200:4200
     environment:
       - DATAPATH=/shared/data
       - MLFLOW_TRACKING_URI=/shared/mlruns
       - EVIDENTLY_WORKSPACE=/shared/evidently-workspace
-      - PREFECT_API_DATABASE_CONNECTION_URL=postgresql+asyncpg://username:password@db:5432/prefect # db is the name of the db container
-      - PREFECT_API_URL=http://0.0.0.0:4200/api
+      - PREFECT_API_DATABASE_CONNECTION_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB} # db is the name of the db container
+      - PREFECT_API_URL=http://${PREFECT_API_URL}:4200/api
     depends_on:
       - db # db container must be up before this container starts
     volumes:
       - shared:/shared
 
   db:
-    image: postgres # image from dockerhub
+    image: postgres:latest # image from dockerhub
+    container_name: prefect-db
     restart: always
+    networks:
+      - trading_advice
     environment:
-      POSTGRES_USER: username
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: prefect
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
     ports:
-      - "5432:5432"
+      - 5432:5432
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -68,3 +79,9 @@ services: #version is a legacy command you can ignore
 volumes: # define volumes on azure file share, these folders are already present there
   pgdata:
   shared:
+
+networks:
+  trading_advice:
+    driver: bridge
+    name: trading-advice-network
+    attachable: false

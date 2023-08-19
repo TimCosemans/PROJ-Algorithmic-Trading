@@ -47,3 +47,5 @@ jobs:
 
     - name: Deploy
       run: make deploy
+      env:
+        PORTAINER_WEBHOOK_URL: ${{ secrets.PORTAINER_WEBHOOK_URL }}
