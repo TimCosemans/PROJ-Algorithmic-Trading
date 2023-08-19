@@ -1,3 +1,2 @@
 # This file needs a new line at the end
-0 * * * * pipenv run python /run.py
-* * * * * echo "Hello world" >> /var/log/cron.log 2>&1
+0 * * * * /usr/local/bin/pipenv run python /run.py >> /var/log/cron.log 2>&1
