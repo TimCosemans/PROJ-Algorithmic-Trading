@@ -3,217 +3,51 @@ PROJ-Algorithmic-Trading
 
 Project for the course MLOps Zoomcamp.
 
-As a trader, you might want to know when to sell and buy stocks
+Problem statement
+-----------------
 
-Based on the closing price each day, you will decide whether to buy or sell the stock the next day.
-Because the price can be assumed to be non-stationary, we will work with the relative change in price instead of the price itself.
-
-
-Before you run, create a .env file with x
-DATAPATH: the path to the data folder x
-MLFLOW_TRACKING_URI: your mlflow tracking uri (e.g., a local folder) x
-
-To see your mlflow ui, run mlflow server in the source folder. Experiments always include the date of day on which they were run.
+As a trader of stocks, you might want to know when to sell and buy stocks. This repo answers this question by using a machine learning model to predict the price of a stock for the next day, based on data from the past 60 days. It does so for all the stocks currently belonging to the [BEL 2O index](https://live.euronext.com/en/product/indices/BE0389555039-XBRU/market-information) and returns the trading advice (BUY/SELL) as well as the prediction of next day's closing stock price for each ticker through an API (available at http://172.187.161.17:9696/advice). This API can be called on from the trader's application of choice.
 
 
-The src-folder contains all of the functions needed to get the data, train and evaluate the model and register the best model.
-The run.py script is the prefect orchestration script that runs the functions in the correct order. It fetches the data on a daily basis, trains the model and registers the best model. Then ths model returns buy or sell signals for the next day. These signals are distributed through a flask api. To get these, run
+Model training
+--------------
 
-gunicorn -c gunicorn_config.py 'app:app' in the app directory
+All code for getting the data, training the model, making predictions and monitoring model performance is available in the [source folder](./src/). [Data](./src/data/) is pulled each time through the [Yahoo Finance API](https://pypi.org/project/yfinance/). After data cleaning, a linear regression is set up to predict the relative change in price for the next day. The amount of lags to take into account when predicting the price change is finetuned using [Hyperopt](http://hyperopt.github.io/hyperopt/). The finetuning process is logged in [MLFlow](./src/train_model/), after which the best model (based on the MAPE of the test set) is registered and put into production. The UI to monitor this process is available at http://172.187.161.17:5000.
 
-To run locally, type python run.py local in the terminal. Then start the ui with prefect server start
+Prediction
+----------
+After putting the model into production, it is used to make [predictions](./src/predict/) for the next day's change in closing price for each ticker. These predictions are then used to determine whether to buy or sell the stock. The trading advice is returned through a [flask API](./src/predict/app/), available at http://172.187.161.17:9696/advice. Because models can start to drift over time, we model the performance of the model using [Evidently](https://evidentlyai.com/). The UI to monitor this process is available at http://172.187.161.17:8080.
 
-launch the monitorign dasboard with evidently ui --workspace ./evidently_workspace
+Orchestration and deployment
+----------------------------
+The whole process is orchestrated using Prefect. The [orchestration script](./run.py) is run hourly using a [Cron](./crontab) job, and fetches the data, trains the model, registers the best model, makes predictions for the API to use and monitors model performance. The Prefect UI for this project is available at http://172.187.161.17:4200.
 
-create a prefect.yaml file by running prefect deploy in the root folder and following the wizard
+The [orchestration script](./Dockerfile), as well as the [model training logging](./src/train_model/Dockerfile), [performance monitoring](./src/monitoring/Dockerfile) and [API app](](./src/predict/app/Dockerfile)) are run in docker containers that are registered on the [Azure Container Registry](https://azure.microsoft.com/en-us/services/container-registry/). We use [Portainer](172.187.161.17:9443) on an [Azure Virtual Machine](https://azure.microsoft.com/en-us/services/virtual-machines/) to set these up using the [docker compose file](./docker-compose.yml).
 
-use lsof -i :5000 to find the process id of the flask api and kill it with kill -9 <pid>
+You can login to the Portainer portal as a read-only user with the following credentials:
+username: reviewer
+password: MLOpsReview2!
 
+CI/CD and pre-commit hooks
+--------------------------
+Before pushing code to the repo, we check whether the code style using a [pre-commit hook](.pre-commit-config.yaml). Packages and versions are specified in the [Pipfile](./Pipfile).
 
-Docker
-------
-To build the docker containers, run
+We orchestrate CI/CD through the use of a [Makefile](./Makefile), that specifies all the steps to be taken to check code style, perform a [unit test](./tests/), build the docker containers, push them to the Azure Container Registry and deploy them to the Azure Virtual Machine. The [GitHub Actions workflow](.github/workflows/) then uses the steps in this Makefile to build the CI/CD pipeline.
 
-docker build -t trading_advice:latest -f src/predict/app/Dockerfile .
-docker build -t mlflow:latest -f src/train_model/Dockerfile .
-docker build -t evidently:latest -f src/monitoring/Dockerfile .
-docker build -t prefect:latest .
+HOW TO RUN
+----------
+To run the docker compose file in the cloud (and start all of the necessary services), you need to create a virtual machine. You can do this in the Azure portal.
+Expose ports 4200, 9696, 8080, 9443 and 5000 by adding them in the networking section. Set destination port ranges to the ones you want to open, specify TCP protocol. SSH into the virtual machine and install the [docker engine](https://docs.docker.com/engine/install/ubuntu/) and [portainer](https://docs.portainer.io/start/install-ce/server/docker/linux).
 
-All in the root folder.To run an individual container, run
+Then go to the portainer UI and create a new stack. Link your repo to the stack and add the docker compose file.
+Go to the container registry on Azure to retrieve the login server, username and password. Then add these to the portainer UI under registries.
 
-docker run -p 5000:5000 trading_advice:latest
+Copy the reference data and tickers.pkl by using the terminal of your local laptop:
 
-Then run
-
-docker compose up -d
-
-to run the whole stack. Install portainer and go to localhost:9443 to check the logs for debugging. You can run code directly in portainer. Shut down the stack using
-
-docker compose down
-
-If you update a container, docker compose does not register this (down and up again). If you make a new one, then it does.
-
-Azure Container Registry
-------------------------
-To deploy to cloud, you first need to create both a resource group, and a virtual machine in Azure. Then create a container registry using
-
-az login
-az group create --name myResourceGroup --location eastus
-az acr create --resource-group myResourceGroup --name <acrName> --sku Basic
-az acr login --name <acrName>
-
-Prefix all images in the docker compose with 'tradingadviceregistry.azurecr.io/' so the image can be pulled to run in Azure Container Registry Then, change their tag to match this before you upload them
-
-docker tag trading_advice tradingadviceregistry.azurecr.io/trading_advice:latest
-docker tag mlflow tradingadviceregistry.azurecr.io/mlflow:latest
-docker tag evidently tradingadviceregistry.azurecr.io/evidently:latest
-docker tag prefect tradingadviceregistry.azurecr.io/prefect:latest
-
-See if it worked by typing
-
-docker images
-
-Then, push them to the registry
-
-docker login tradingadviceregistry.azurecr.io
-
-docker push tradingadviceregistry.azurecr.io/trading_advice:latest
-docker push tradingadviceregistry.azurecr.io/mlflow:latest
-docker push tradingadviceregistry.azurecr.io/evidently:latest
-docker push tradingadviceregistry.azurecr.io/prefect:latest
-
-To list the images in the repository, type:
-
-az acr repository list --name tradingadviceregistry --output table
-
-Azure Virtual Machine
----------------------
-To run the docker compose file in the cloud, you need to create a virtual machine. You can do this in the Azure portal.
-Expose ports by adding them in the networking section. Set destination port ranges to the ones you want to open, specify TCP protocol.
-
-Then, you need to install docker on the virtual machine.
-
-ssh into the virtual machine and run
-
-ssh timcosemans@172.187.161.17
-
-Then enter the password.
-
-Install the docker engine using this page: https://docs.docker.com/engine/install/ubuntu/
-And portainer: https://docs.portainer.io/start/install-ce/server/docker/linux. Potentiall prefix commands with sudo
-
-
-Then go to the portainer ui and create a new stack. Paste the docker compose file in the editor and click deploy.
-If it shows an error fetching the images, you need to log in to the container registry. Go to the container registry on Azure to retrieve the login server, username and password. Then add these to the portainer ui under registries. Timeouts happen, just press deploy again.
-
-Copy the data by using the terminal of your local laptop:
-
-scp -r data timcosemans@172.187.161.17:/home/timcosemans #secure copy protocol
+```scp -r data username@ip.of.vm:/home/username #secure copy protocol ```
 
 Then, ssh into the virtual machine and copy the data to the docker volume
 
-sudo docker cp data prefect:/shared
+```sudo docker cp data prefect:/shared```
 
-Copying it into one container, will copy it into the shared volume for all containers in the stack.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-then create an azure file share and mount this as a storage account in your docker compose file
-
-az storage share create --name trading-advice-share --account-name tradingadviceblob
-
-you can copy files to this share using the azure storage dexplorer
-
-
-
-then, create a container instance
-
-docker login azure
-docker context create aci trading-advice-context
-docker context use trading-advice-context
-
-login to the container registry
-az acr login --name tradingadviceregistry --expose-token
-docker login tradingadviceregistry.azurecr.io --username 00000000-0000-0000-0000-000000000000 --password-stdin <<< $TOKEN
-
-docker compose up
-docker ps
-
-# Update DNS name label (restarts container), leave other properties unchanged
-az container create --resource-group rg-Databricks_ML_Studio_Training --name proj-algorithmic-trading  --dns-name-label mlops
-
-
-
-
-az container exec --resource-group rg-Databricks_ML_Studio_Training --name proj-algorithmic-trading --container-name prefect --exec-command "/bin/bash"
-
-Project Organization
-------------
-
-    ├── LICENSE
-    ├── Makefile           <- Makefile with commands like `make data` or `make train`
-    ├── README.md          <- The top-level README for developers using this project.
-    ├── data
-    │   ├── external       <- Data from third party sources.
-    │   ├── interim        <- Intermediate data that has been transformed.
-    │   ├── processed      <- The final, canonical data sets for modeling.
-    │   └── raw            <- The original, immutable data dump.
-    │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
-    │
-    ├── models             <- Trained and serialized models, model predictions, or model summaries
-    │
-    ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-    │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-data-exploration`.
-    │
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    │
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures        <- Generated graphics and figures to be used in reporting
-    │
-    ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-    │                         generated with `pip freeze > requirements.txt`
-    │
-    ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
-    ├── src                <- Source code for use in this project.
-    │   ├── __init__.py    <- Makes src a Python module
-    │   │
-    │   ├── data           <- Scripts to download or generate data
-    │   │   └── make_dataset.py
-    │   │
-    │   ├── features       <- Scripts to turn raw data into features for modeling
-    │   │   └── build_features.py
-    │   │
-    │   ├── models         <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
-    │   │
-    │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
-    │       └── visualize.py
-    │
-    └── tox.ini            <- tox file with settings for running tox; see tox.readthedocs.io
-
-
---------
-
-<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+Now, all the services should be running. You can check this by going to the portainer UI and checking the containers.
