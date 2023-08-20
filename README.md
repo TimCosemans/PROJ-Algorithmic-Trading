@@ -24,7 +24,7 @@ The whole process is orchestrated using Prefect. The [orchestration script](./ru
 
 The [orchestration script](./Dockerfile), as well as the [model training logging](./src/train_model/Dockerfile), [performance monitoring](./src/monitoring/Dockerfile) and [API app](./src/predict/app/Dockerfile) are run in docker containers that are registered on the [Azure Container Registry](https://azure.microsoft.com/en-us/services/container-registry/). We use [Portainer](172.187.161.17:9443) on an [Azure Virtual Machine](https://azure.microsoft.com/en-us/services/virtual-machines/) to set these up using the [docker compose file](./docker-compose.yaml).
 
-You can login to the Portainer portal as a read-only user with the following credentials:
+You can login to the [Portainer](172.187.161.17:9443) portal as a read-only user with the following credentials:
 username: reviewer
 password: MLOpsReview2!
 
