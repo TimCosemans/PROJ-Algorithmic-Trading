@@ -22,7 +22,7 @@ Orchestration and deployment
 ----------------------------
 The whole process is orchestrated using Prefect. The [orchestration script](./run.py) is run hourly using a [Cron](./crontab) job, and fetches the data, trains the model, registers the best model, makes predictions for the API to use and monitors model performance. The Prefect UI for this project is available at http://172.187.161.17:4200.
 
-The [orchestration script](./Dockerfile), as well as the [model training logging](./src/train_model/Dockerfile), [performance monitoring](./src/monitoring/Dockerfile) and [API app](./src/predict/app/Dockerfile) are run in docker containers that are registered on the [Azure Container Registry](https://azure.microsoft.com/en-us/services/container-registry/). We use [Portainer](172.187.161.17:9443) on an [Azure Virtual Machine](https://azure.microsoft.com/en-us/services/virtual-machines/) to set these up using the [docker compose file](./docker-compose.yml).
+The [orchestration script](./Dockerfile), as well as the [model training logging](./src/train_model/Dockerfile), [performance monitoring](./src/monitoring/Dockerfile) and [API app](./src/predict/app/Dockerfile) are run in docker containers that are registered on the [Azure Container Registry](https://azure.microsoft.com/en-us/services/container-registry/). We use [Portainer](172.187.161.17:9443) on an [Azure Virtual Machine](https://azure.microsoft.com/en-us/services/virtual-machines/) to set these up using the [docker compose file](docker-compose.yml).
 
 You can login to the Portainer portal as a read-only user with the following credentials:
 username: reviewer
